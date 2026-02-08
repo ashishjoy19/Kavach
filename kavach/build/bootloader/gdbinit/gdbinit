@@ -1,0 +1,2 @@
+source C:/Users/Ashish/esp-box/examples/kavach_demo/build/bootloader/gdbinit/symbols
+source C:/Users/Ashish/esp-box/examples/kavach_demo/build/bootloader/gdbinit/connect
