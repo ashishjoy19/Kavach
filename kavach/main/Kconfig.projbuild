@@ -1,0 +1,48 @@
+# Kavach project options: WiFi, MQTT broker, topics.
+# These appear in idf.py menuconfig under "Kavach Configuration".
+
+menu "Kavach Configuration"
+
+    config KAVACH_WIFI_SSID
+        string "WiFi SSID"
+        default "myssid"
+        help
+            SSID of the AP to connect to (your PC's network or router).
+
+    config KAVACH_WIFI_PASSWORD
+        string "WiFi Password"
+        default "mypassword"
+        help
+            Password of the AP.
+
+    config KAVACH_MQTT_BROKER_URI
+        string "MQTT Broker URI"
+        default "mqtt://192.168.1.100:1883"
+        help
+            URI of the MQTT broker (e.g. mqtt://broker.hivemq.com:1883 or local mqtt://<PC_IP>:1883).
+
+    config KAVACH_MQTT_USERNAME
+        string "MQTT username (leave empty for no auth)"
+        default ""
+        help
+            Username for broker authentication. Leave empty for anonymous brokers.
+
+    config KAVACH_MQTT_PASSWORD
+        string "MQTT password (leave empty for no auth)"
+        default ""
+        help
+            Password for broker authentication. Leave empty for anonymous brokers.
+
+    config KAVACH_MQTT_TOPIC_HELP
+        string "Topic for help/alert/call (publish)"
+        default "fabacademy/kavach/help"
+        help
+            Help-related commands (I need help, Send alert, Call family) published here for emergency contacts.
+
+    config KAVACH_MQTT_TOPIC_APPLIANCES
+        string "Topic for appliance commands (publish)"
+        default "fabacademy/kavach/appliances"
+        help
+            Appliance commands (light on/off, play, pause, etc.) published here for your app to control IoT devices.
+
+endmenu

@@ -1,26 +1,34 @@
-# Kavach – Minimal Voice-Only Build
+# Kavach – Voice + MQTT
 
-**Kavach** is an elderly-focused AI assist device (ESP32-S3 Box-3). This folder is a **minimal build**: **voice recognition only** and a **simple UI** (status text + on-screen light). No factory UI, no buttons, no music player, no LED control, no WiFi/provisioning UI. You can add a custom UI, MQTT, appliance control, and temperature/humidity later.
+**Kavach** is an elderly-focused AI assist device (ESP32-S3 Box-3): **voice recognition**, **minimal UI**, **MQTT** (publish voice commands, subscribe for appliance control), and **LED/light** control.
 
 ## What this build includes
 
-- **ESP-SR** – Offline wake word + command recognition (unchanged from factory).
-- **Minimal UI** – One screen: title “Kavach”, status line, and a coloured circle (light):
-  - **Grey** – Idle.
-  - **Green** – Wake word detected (“Say command”).
-  - **Blue** – Command recognised (shows command text).
-  - **Red** – Alert sent (e.g. “I need help” → status “Alert sent”).
+- **ESP-SR** – Offline wake word + command recognition.
+- **Minimal UI** – One screen: title “Kavach”, status text, and on-screen light (idle / listening / command ok / alert).
+- **WiFi** – Simple STA connect using SSID/password from menuconfig (no provisioning UI).
+- **MQTT** – Connects to a broker (e.g. Mosquitto on your PC). **Publish only:** help-type commands → `kavach/help`, appliance-type commands → `kavach/appliances`. Your app subscribes and then contacts emergency contacts or controls IoT devices wirelessly.
 
-No sound feedback, no menus, no buttons. All feedback is on-screen only.
+## MQTT setup
+
+1. **Broker** – Run Mosquitto on your PC (or any MQTT broker on the same network).
+2. **Configure** – Set WiFi and broker in menuconfig or in `sdkconfig.defaults`:
+   - `idf.py menuconfig` → **Kavach Configuration**:
+     - **WiFi SSID** / **WiFi Password** – your network.
+     - **MQTT Broker URI** – e.g. `mqtt://192.168.1.100:1883` (use your PC’s IP).
+   - Or edit `sdkconfig.defaults`: `CONFIG_KAVACH_WIFI_SSID`, `CONFIG_KAVACH_WIFI_PASSWORD`, `CONFIG_KAVACH_MQTT_BROKER_URI`.
+3. **Two topics (publish only)** – The device only **publishes**; it does not subscribe or control any appliance itself. Your app subscribes to these topics and then contacts emergency contacts or controls your IoT devices:
+
+| Topic (default)     | When used | Payload example | Use in your app |
+|---------------------|-----------|------------------|------------------|
+| **`kavach/help`**   | Help / alert / call family / “Help” | `I need help`, `Send alert`, `Call family`, `Help` | Notify emergency contacts, trigger calls |
+| **`kavach/appliances`** | All other voice commands (light, play, pause, AC, etc.) | `Turn on the light`, `Play music`, `Turn off the Air` | Forward to your IoT devices / smart home |
+
+So: **help-related** → one topic for people; **appliance-related** → one topic for devices. No on-device LED or appliance control; everything is published for your app to act on.
 
 ## Voice commands
 
-- **Help / Alert** – “I need help”, “Send alert”, “Emergency” → UI: “Alert sent”, red light, plays `echo_*_alerted.wav` (e.g. “Alerted”).
-- **Call family** – “Call family”, “Call my son”, “Call home” → plays `echo_*_calling.wav` (e.g. “Calling”).
-- **Help** – “Help”, “What can you do?” → plays `echo_*_help.wav` (e.g. list of commands).
-- Other commands → play `echo_*_ok.wav`.
-
-See **VOICE_CONFIRMATIONS.md** for adding custom WAVs (e.g. “Alerted”, “Calling your son”, help summary). For this minimal build, recognised commands only update the status text and light; no hardware (LED, player, AC) is controlled. Help/Alert shows “Alert sent” and red light as a placeholder for future MQTT.
+Same as before (Help/Alert, Call family, Help, light on/off, etc.). Each recognised command is published to `kavach/help` or `kavach/appliances` and the UI is updated. Voice confirmation WAVs are disabled by default (`KAVACH_VOICE_CONFIRM 0` in `app_sr_handler.c`).
 
 ## Build and flash
 
@@ -31,24 +39,23 @@ idf.py build
 idf.py -p <PORT> flash monitor
 ```
 
-Use **Board: ESP32-S3-BOX-3** in `idf.py menuconfig` (BSP) if needed.
+Set **Board: ESP32-S3-BOX-3** in `idf.py menuconfig` (BSP) if needed.
 
-## Project layout (minimal)
+**If MQTT won’t connect** (e.g. `esp-tls: select() timeout` / `Error transport connect`):
 
-- `main/main.c` – NVS, settings, display, SR start; no WiFi, no player, no LED.
-- `main/app/app_sr.c`, `app_sr.h` – ESP-SR and Kavach commands (unchanged).
-- `main/app/app_sr_handler.c` – Only updates `ui_kavach` (text + light); no echo, no player/LED/sensor.
-- `main/app/sensor_stub.c`, `mute_stub.c` – Stubs so SR runs without sensor/mute UI.
-- `main/gui/ui_kavach.c`, `ui_kavach.h` – Single screen with title, status label, and light.
+- Use **plain MQTT**: URI must be `mqtt://<IP>:1883` (not `mqtts://`). The project defaults to non-SSL (`CONFIG_MQTT_TRANSPORT_SSL` off in `sdkconfig.defaults`).
+- **Broker**: Start Mosquitto on the PC (e.g. `mosquitto -v`). Ensure it’s listening on 0.0.0.0:1883 (or your PC’s IP).
+- **Same network**: ESP32 and broker must be on the same LAN; set **MQTT Broker URI** to your PC’s actual IP (e.g. `mqtt://192.168.220.13:1883`).
+- **Firewall**: Allow inbound TCP port **1883** on the PC where the broker runs.
+- After changing `sdkconfig.defaults` (e.g. disabling SSL), run `idf.py fullclean` then `idf.py build` so the new config is applied.
 
-Excluded from build: factory UI (ui_main, ui_sr, ui_player, etc.), app_led, app_fan, app_switch, app_sntp, app_wifi, file_manager, rmaker, most fonts and all gui images.
+## Project layout
 
-## Adding features later
-
-- **Custom UI** – Replace or extend `ui_kavach.c` and keep using `kavach_ui_set_status()` / `kavach_ui_set_light()` from the SR handler.
-- **MQTT** – In `app_sr_handler.c`, in the `SR_CMD_HELP_ALERT` and `SR_CMD_CALL_FAMILY` cases, call your MQTT publish; optionally re-enable `app_wifi` and provisioning.
-- **Appliance control** – Re-add `app_led` (or your relay driver) and handle light/plug commands in the handler.
-- **Temperature/humidity** – Add sensor driver and publish or threshold-check in a task; trigger alert via MQTT when needed.
+- `main/main.c` – NVS, settings, **WiFi**, **MQTT**, display, SR start (no LED).
+- `main/app/app_wifi_simple.c` – WiFi STA (SSID/password from config).
+- `main/app/app_mqtt.c` – MQTT client: **publish only** to `kavach/help` and `kavach/appliances`.
+- `main/app/app_sr.c`, `app_sr_handler.c` – SR + handler; handler publishes help commands to help topic and all other commands to appliances topic.
+- `main/Kconfig.projbuild` – WiFi SSID/password, MQTT broker URI, and the two topic names.
 
 ## References
 

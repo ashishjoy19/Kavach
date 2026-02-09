@@ -16,8 +16,11 @@
 #include "driver/gpio.h"
 #include "driver/ledc.h"
 #include "led_strip.h"
-#include "ui_main.h"
-#include "ui_device_ctrl.h"
+/* UI optional: Kavach minimal build has no device ctrl UI */
+#ifndef UI_DEV_LIGHT
+#define UI_DEV_LIGHT 0
+#endif
+static inline void ui_dev_ctrl_set_state(int dev, int state) { (void)dev; (void)state; }
 
 static const char *TAG = "app_led";
 

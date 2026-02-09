@@ -1,6 +1,5 @@
 /*
- * Kavach minimal: voice recognition only. UI = text + on-screen light.
- * No factory UI, no buttons, no player, no LED. MQTT / sensors / appliance control later.
+ * Kavach: voice recognition + MQTT. Publishes voice commands to broker, subscribes for appliance control.
  */
 #include <stdio.h>
 #include "esp_log.h"
@@ -10,6 +9,8 @@
 #include "bsp_storage.h"
 #include "settings.h"
 #include "app_sr.h"
+#include "app_wifi_simple.h"
+#include "app_mqtt.h"
 #include "gui/ui_kavach.h"
 #include "bsp_board.h"
 #include "bsp/esp-bsp.h"
@@ -18,7 +19,7 @@ static const char *TAG = "main";
 
 void app_main(void)
 {
-    ESP_LOGI(TAG, "Kavach (voice only). Compile: %s %s", __DATE__, __TIME__);
+    ESP_LOGI(TAG, "Kavach (voice + MQTT). Compile: %s %s", __DATE__, __TIME__);
 
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -27,6 +28,17 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(err);
     ESP_ERROR_CHECK(settings_read_parameter_from_nvs());
+
+    /* WiFi then MQTT (broker on PC) */
+    err = app_wifi_simple_start();
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "WiFi not connected; MQTT will not work until WiFi is available");
+    } else {
+        err = app_mqtt_start();
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "MQTT start failed");
+        }
+    }
 
     bsp_spiffs_mount();
     bsp_i2c_init();

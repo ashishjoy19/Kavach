@@ -6743,6 +6743,84 @@
     {
         "children": [
             {
+                "children": [],
+                "depends_on": null,
+                "help": "SSID of the AP to connect to (your PC's network or router).",
+                "id": "KAVACH_WIFI_SSID",
+                "name": "KAVACH_WIFI_SSID",
+                "range": null,
+                "title": "WiFi SSID",
+                "type": "string"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": "Password of the AP.",
+                "id": "KAVACH_WIFI_PASSWORD",
+                "name": "KAVACH_WIFI_PASSWORD",
+                "range": null,
+                "title": "WiFi Password",
+                "type": "string"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": "URI of the MQTT broker (e.g. mqtt://broker.hivemq.com:1883 or local mqtt://<PC_IP>:1883).",
+                "id": "KAVACH_MQTT_BROKER_URI",
+                "name": "KAVACH_MQTT_BROKER_URI",
+                "range": null,
+                "title": "MQTT Broker URI",
+                "type": "string"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": "Username for broker authentication. Leave empty for anonymous brokers.",
+                "id": "KAVACH_MQTT_USERNAME",
+                "name": "KAVACH_MQTT_USERNAME",
+                "range": null,
+                "title": "MQTT username (leave empty for no auth)",
+                "type": "string"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": "Password for broker authentication. Leave empty for anonymous brokers.",
+                "id": "KAVACH_MQTT_PASSWORD",
+                "name": "KAVACH_MQTT_PASSWORD",
+                "range": null,
+                "title": "MQTT password (leave empty for no auth)",
+                "type": "string"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": "Help-related commands (I need help, Send alert, Call family) published here for emergency contacts.",
+                "id": "KAVACH_MQTT_TOPIC_HELP",
+                "name": "KAVACH_MQTT_TOPIC_HELP",
+                "range": null,
+                "title": "Topic for help/alert/call (publish)",
+                "type": "string"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": "Appliance commands (light on/off, play, pause, etc.) published here for your app to control IoT devices.",
+                "id": "KAVACH_MQTT_TOPIC_APPLIANCES",
+                "name": "KAVACH_MQTT_TOPIC_APPLIANCES",
+                "range": null,
+                "title": "Topic for appliance commands (publish)",
+                "type": "string"
+            }
+        ],
+        "depends_on": null,
+        "id": "kavach-configuration",
+        "title": "Kavach Configuration",
+        "type": "menu"
+    },
+    {
+        "children": [
+            {
                 "children": [
                     {
                         "children": [],

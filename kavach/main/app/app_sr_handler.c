@@ -15,6 +15,7 @@
 #include "app_sr_handler.h"
 #include "ui_kavach.h"
 #include "settings.h"
+#include "app_mqtt.h"
 #include "bsp_board.h"
 #include "bsp/esp-bsp.h"
 
@@ -213,27 +214,29 @@ void sr_handler_task(void *pvParam)
             case SR_CMD_HELP_ALERT:
                 kavach_ui_set_status("Alert sent");
                 kavach_ui_set_light(KAVACH_LIGHT_ALERT);
-                ESP_LOGW(TAG, "Kavach: HELP/ALERT – placeholder for MQTT");
-                play_confirmation_wav(CONFIRM_ALERTED);  /* e.g. "Alerted" */
+                play_confirmation_wav(CONFIRM_ALERTED);
+                app_mqtt_publish_help(cmd->str);  /* → kavach/help for emergency contacts */
                 break;
 
             case SR_CMD_CALL_FAMILY:
                 kavach_ui_set_status((char *)cmd->str);
                 kavach_ui_set_light(KAVACH_LIGHT_COMMAND_OK);
-                ESP_LOGW(TAG, "Kavach: CALL FAMILY – placeholder for MQTT");
-                play_confirmation_wav(CONFIRM_CALLING);  /* e.g. "Calling" / "Calling your son" */
+                play_confirmation_wav(CONFIRM_CALLING);
+                app_mqtt_publish_help(cmd->str);  /* → kavach/help for emergency contacts */
                 break;
 
             case SR_CMD_HELP:
                 kavach_ui_set_status("Help");
                 kavach_ui_set_light(KAVACH_LIGHT_COMMAND_OK);
-                play_confirmation_wav(CONFIRM_HELP);    /* e.g. help summary WAV */
+                play_confirmation_wav(CONFIRM_HELP);
+                app_mqtt_publish_help(cmd->str);  /* → kavach/help */
                 break;
 
             default:
                 kavach_ui_set_status((char *)cmd->str);
                 kavach_ui_set_light(KAVACH_LIGHT_COMMAND_OK);
                 play_confirmation_wav(CONFIRM_OK);
+                app_mqtt_publish_appliance(cmd->str);  /* → kavach/appliances for IoT control */
                 break;
             }
         }
