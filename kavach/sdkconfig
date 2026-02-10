@@ -601,6 +601,8 @@ CONFIG_KAVACH_MQTT_USERNAME="fabacademy"
 CONFIG_KAVACH_MQTT_PASSWORD="fabacademy"
 CONFIG_KAVACH_MQTT_TOPIC_HELP="fabacademy/kavach/help"
 CONFIG_KAVACH_MQTT_TOPIC_APPLIANCES="fabacademy/kavach/appliances"
+CONFIG_KAVACH_MQTT_TOPIC_SENSOR="fabacademy/kavach/sensor"
+CONFIG_KAVACH_MQTT_SENSOR_INTERVAL_SEC=30
 # end of Kavach Configuration
 
 #

@@ -6811,6 +6811,29 @@
                 "range": null,
                 "title": "Topic for appliance commands (publish)",
                 "type": "string"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": "Temperature and humidity published here periodically (e.g. every 30 s) when sensor is available.",
+                "id": "KAVACH_MQTT_TOPIC_SENSOR",
+                "name": "KAVACH_MQTT_TOPIC_SENSOR",
+                "range": null,
+                "title": "Topic for temperature/humidity (publish)",
+                "type": "string"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": "How often to publish temperature and humidity to the sensor topic.",
+                "id": "KAVACH_MQTT_SENSOR_INTERVAL_SEC",
+                "name": "KAVACH_MQTT_SENSOR_INTERVAL_SEC",
+                "range": [
+                    10,
+                    300
+                ],
+                "title": "Sensor publish interval (seconds)",
+                "type": "int"
             }
         ],
         "depends_on": null,

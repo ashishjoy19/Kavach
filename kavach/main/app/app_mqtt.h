@@ -20,6 +20,9 @@ esp_err_t app_mqtt_publish_help(const char *cmd_str);
 /** Publish appliance command (light on/off, play, pause, etc.). */
 esp_err_t app_mqtt_publish_appliance(const char *cmd_str);
 
+/** Publish temperature and humidity (e.g. to fabacademy/kavach/sensor). Payload "temp=25.3,hum=60". */
+esp_err_t app_mqtt_publish_sensor(float temp_c, float humidity_pct);
+
 /** Return true if MQTT is connected. */
 bool app_mqtt_connected(void);
 

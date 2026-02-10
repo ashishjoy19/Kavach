@@ -1,1 +1,10 @@
-Command: ninja all
+Command: E:\Espressif\python_env\idf5.5_py3.11_env\Scripts\python.exe E:\Espressif\frameworks\esp-idf-v5.5\tools/idf_monitor.py -p COM15 -b 115200 --toolchain-prefix xtensa-esp32s3-elf- --target esp32s3 --revision 0 C:\Users\Ashish\esp-box\examples\kavach_demo\build\kavach_demo.elf C:\Users\Ashish\esp-box\examples\kavach_demo\build\bootloader\bootloader.elf --force-color -m 'E:\Espressif\python_env\idf5.5_py3.11_env\Scripts\python.exe' 'E:\Espressif\frameworks\esp-idf-v5.5\tools\idf.py' '-p' 'COM15'
+[0;33m--- Warning: GDB cannot open serial ports accessed as COMx[0m
+[0;33m--- Using \\.\COM15 instead...[0m
+[0;33m--- esp-idf-monitor 1.7.0 on \\.\COM15 115200[0m
+[0;33m--- Quit: Ctrl+] | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H[0m
+[0m--- 0x42009a83: [0;33ms_test_psram[0m[0m at [0;32mE:/Espressif/frameworks/esp-idf-v5.5/components/esp_psram/system_layer/esp_psram.c[0m[0m:[1;31m554[0m
+[0m--- 0x403c8700: [0;33m_stext[0m[0m at [0;32m??[0m[0m:[1;31m?[0m
+[0m--- 0x403c8938: [0;33mcall_start_cpu0[0m[0m at [0;32mE:/Espressif/frameworks/esp-idf-v5.5/components/bootloader/subproject/main/bootloader_start.c[0m[0m:[1;31m25[0m
+[0m--- 0x42000020: [0;33m_stext[0m[0m at [0;32m??[0m[0m:[1;31m?[0m
+[0m

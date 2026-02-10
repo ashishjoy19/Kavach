@@ -192,7 +192,7 @@ void sr_handler_task(void *pvParam)
         app_sr_get_result(&result, portMAX_DELAY);
 
         if (result.state == ESP_MN_STATE_TIMEOUT) {
-            kavach_ui_set_status("Timeout");
+            kavach_ui_set_status("Say Hi ESP");
             kavach_ui_set_light(KAVACH_LIGHT_IDLE);
             continue;
         }

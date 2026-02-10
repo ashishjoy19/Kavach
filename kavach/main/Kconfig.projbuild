@@ -45,4 +45,17 @@ menu "Kavach Configuration"
         help
             Appliance commands (light on/off, play, pause, etc.) published here for your app to control IoT devices.
 
+    config KAVACH_MQTT_TOPIC_SENSOR
+        string "Topic for temperature/humidity (publish)"
+        default "fabacademy/kavach/sensor"
+        help
+            Temperature and humidity published here periodically (e.g. every 30 s) when sensor is available.
+
+    config KAVACH_MQTT_SENSOR_INTERVAL_SEC
+        int "Sensor publish interval (seconds)"
+        default 30
+        range 10 300
+        help
+            How often to publish temperature and humidity to the sensor topic.
+
 endmenu

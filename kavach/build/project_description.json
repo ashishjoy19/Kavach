@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "kavach_demo",
-    "project_version":    "v0.5.0-93-gd634baf",
+    "project_version":    "v0.5.0-93-gd634baf-dirty",
     "project_path":       "C:/Users/Ashish/esp-box/examples/kavach_demo",
     "idf_path":           "E:/Espressif/frameworks/esp-idf-v5.5",
     "build_dir":          "C:/Users/Ashish/esp-box/examples/kavach_demo/build",
@@ -96,11 +96,11 @@
             "type": "LIBRARY",
             "lib": "__idf_bsp",
             "reqs": [ "driver", "fatfs", "espressif__esp_codec_dev" ],
-            "priv_reqs": [ "espressif__esp-box-3", "espressif__button" ],
+            "priv_reqs": [ "espressif__esp-box-3", "espressif__aht20", "espressif__at581x", "espressif__button" ],
             "managed_reqs": [ "espressif__esp_codec_dev" ],
             "managed_priv_reqs": [ "espressif__button" ],
             "file": "C:/Users/Ashish/esp-box/examples/kavach_demo/build/esp-idf/bsp/libbsp.a",
-            "sources": [ "C:/Users/Ashish/esp-box/components/bsp/src/boards/esp32_bsp_no_sensor.c", "C:/Users/Ashish/esp-box/components/bsp/src/boards/esp32_bsp_board.c" ],
+            "sources": [ "C:/Users/Ashish/esp-box/components/bsp/src/boards/esp32_bsp_sensor.c", "C:/Users/Ashish/esp-box/components/bsp/src/boards/esp32_bsp_board.c" ],
             "include_dirs": [ "src/boards", "include" ]
         },
         "bt": {
@@ -3250,7 +3250,7 @@
             "dir": "C:/Users/Ashish/esp-box/components/bsp",
             "lib": "__idf_bsp",
             "reqs": [ "driver", "fatfs", "espressif__esp_codec_dev" ],
-            "priv_reqs": [ "espressif__esp-box-3", "espressif__button" ],
+            "priv_reqs": [ "espressif__esp-box-3", "espressif__aht20", "espressif__at581x", "espressif__button" ],
             "managed_reqs": [ "espressif__esp_codec_dev" ],
             "managed_priv_reqs": [ "espressif__button" ],
             "include_dirs": [ "src/boards", "include" ]
