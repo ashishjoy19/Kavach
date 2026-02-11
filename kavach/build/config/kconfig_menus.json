@@ -6834,6 +6834,16 @@
                 ],
                 "title": "Sensor publish interval (seconds)",
                 "type": "int"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "help": "POSIX TZ string. Examples: IST-5:30 (India), CST-8 (China), EST5EDT (US Eastern),\nJST-9 (Japan), UTC (no offset). Time is synced via NTP; this only affects local display.",
+                "id": "KAVACH_TIMEZONE",
+                "name": "KAVACH_TIMEZONE",
+                "range": null,
+                "title": "Timezone for display (TZ string)",
+                "type": "string"
             }
         ],
         "depends_on": null,

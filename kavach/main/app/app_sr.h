@@ -51,6 +51,8 @@ typedef enum {
     SR_CMD_PAUSE,
     SR_CMD_AC_ON,
     SR_CMD_AC_OFF,
+    SR_CMD_FAN_ON,
+    SR_CMD_FAN_OFF,
     /* Kavach: communication and safety */
     SR_CMD_HELP_ALERT,   /* "I need help", "Send alert", "Emergency" */
     SR_CMD_CALL_FAMILY,  /* "Call family", "Call my son", "Call home" */

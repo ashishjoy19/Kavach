@@ -232,11 +232,79 @@ void sr_handler_task(void *pvParam)
                 app_mqtt_publish_help(cmd->str);  /* → kavach/help */
                 break;
 
+            case SR_CMD_LIGHT_ON:
+                kavach_ui_set_status((char *)cmd->str);
+                kavach_ui_set_light(KAVACH_LIGHT_COMMAND_OK);
+                play_confirmation_wav(CONFIRM_OK);
+                app_mqtt_publish_appliance_json("light1", "ON");
+                break;
+            case SR_CMD_LIGHT_OFF:
+                kavach_ui_set_status((char *)cmd->str);
+                kavach_ui_set_light(KAVACH_LIGHT_COMMAND_OK);
+                play_confirmation_wav(CONFIRM_OK);
+                app_mqtt_publish_appliance_json("light1", "OFF");
+                break;
+            case SR_CMD_FAN_ON:
+                kavach_ui_set_status((char *)cmd->str);
+                kavach_ui_set_light(KAVACH_LIGHT_COMMAND_OK);
+                play_confirmation_wav(CONFIRM_OK);
+                app_mqtt_publish_appliance_json("fan1", "ON");
+                break;
+            case SR_CMD_FAN_OFF:
+                kavach_ui_set_status((char *)cmd->str);
+                kavach_ui_set_light(KAVACH_LIGHT_COMMAND_OK);
+                play_confirmation_wav(CONFIRM_OK);
+                app_mqtt_publish_appliance_json("fan1", "OFF");
+                break;
+            case SR_CMD_AC_ON:
+                kavach_ui_set_status((char *)cmd->str);
+                kavach_ui_set_light(KAVACH_LIGHT_COMMAND_OK);
+                play_confirmation_wav(CONFIRM_OK);
+                app_mqtt_publish_appliance_json("ac1", "ON");
+                break;
+            case SR_CMD_AC_OFF:
+                kavach_ui_set_status((char *)cmd->str);
+                kavach_ui_set_light(KAVACH_LIGHT_COMMAND_OK);
+                play_confirmation_wav(CONFIRM_OK);
+                app_mqtt_publish_appliance_json("ac1", "OFF");
+                break;
+            case SR_CMD_PLAY:
+                kavach_ui_set_status((char *)cmd->str);
+                kavach_ui_set_light(KAVACH_LIGHT_COMMAND_OK);
+                play_confirmation_wav(CONFIRM_OK);
+                app_mqtt_publish_appliance_json("player", "PLAY");
+                break;
+            case SR_CMD_PAUSE:
+                kavach_ui_set_status((char *)cmd->str);
+                kavach_ui_set_light(KAVACH_LIGHT_COMMAND_OK);
+                play_confirmation_wav(CONFIRM_OK);
+                app_mqtt_publish_appliance_json("player", "PAUSE");
+                break;
+            case SR_CMD_NEXT:
+                kavach_ui_set_status((char *)cmd->str);
+                kavach_ui_set_light(KAVACH_LIGHT_COMMAND_OK);
+                play_confirmation_wav(CONFIRM_OK);
+                app_mqtt_publish_appliance_json("player", "NEXT");
+                break;
+            case SR_CMD_SET_RED:
+            case SR_CMD_SET_GREEN:
+            case SR_CMD_SET_BLUE:
+                kavach_ui_set_status((char *)cmd->str);
+                kavach_ui_set_light(KAVACH_LIGHT_COMMAND_OK);
+                play_confirmation_wav(CONFIRM_OK);
+                app_mqtt_publish_appliance_json("light1", cmd->cmd == SR_CMD_SET_RED ? "RED" : cmd->cmd == SR_CMD_SET_GREEN ? "GREEN" : "BLUE");
+                break;
+            case SR_CMD_CUSTOMIZE_COLOR:
+                kavach_ui_set_status((char *)cmd->str);
+                kavach_ui_set_light(KAVACH_LIGHT_COMMAND_OK);
+                play_confirmation_wav(CONFIRM_OK);
+                app_mqtt_publish_appliance_json("light1", "CUSTOMIZE");
+                break;
             default:
                 kavach_ui_set_status((char *)cmd->str);
                 kavach_ui_set_light(KAVACH_LIGHT_COMMAND_OK);
                 play_confirmation_wav(CONFIRM_OK);
-                app_mqtt_publish_appliance(cmd->str);  /* → kavach/appliances for IoT control */
+                app_mqtt_publish_appliance_json("unknown", "ON");
                 break;
             }
         }

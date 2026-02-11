@@ -10,6 +10,7 @@
 #include "settings.h"
 #include "app_sr.h"
 #include "app_wifi_simple.h"
+#include "app_sntp.h"
 #include "app_mqtt.h"
 #include "gui/ui_kavach.h"
 #include "bsp_board.h"
@@ -29,11 +30,12 @@ void app_main(void)
     ESP_ERROR_CHECK(err);
     ESP_ERROR_CHECK(settings_read_parameter_from_nvs());
 
-    /* WiFi then MQTT (broker on PC) */
+    /* WiFi then SNTP (for correct time) and MQTT (broker on PC) */
     err = app_wifi_simple_start();
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "WiFi not connected; MQTT will not work until WiFi is available");
     } else {
+        app_sntp_init();  /* sync time via NTP so UI clock is correct */
         err = app_mqtt_start();
         if (err != ESP_OK) {
             ESP_LOGW(TAG, "MQTT start failed");

@@ -58,4 +58,11 @@ menu "Kavach Configuration"
         help
             How often to publish temperature and humidity to the sensor topic.
 
+    config KAVACH_TIMEZONE
+        string "Timezone for display (TZ string)"
+        default "IST-5:30"
+        help
+            POSIX TZ string. Examples: IST-5:30 (India), CST-8 (China), EST5EDT (US Eastern),
+            JST-9 (Japan), UTC (no offset). Time is synced via NTP; this only affects local display.
+
 endmenu

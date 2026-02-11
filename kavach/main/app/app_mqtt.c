@@ -15,6 +15,7 @@ static const char *TAG = "mqtt";
 
 #define MQTT_URI_MAX 128
 #define SENSOR_PAYLOAD_MAX 64
+#define APPLIANCE_JSON_MAX 80
 static char s_mqtt_uri[MQTT_URI_MAX];
 static char s_sensor_payload[SENSOR_PAYLOAD_MAX];
 static esp_mqtt_client_handle_t s_client;
@@ -142,9 +143,19 @@ esp_err_t app_mqtt_publish_help(const char *cmd_str)
     return publish_to(CONFIG_KAVACH_MQTT_TOPIC_HELP, cmd_str);
 }
 
-esp_err_t app_mqtt_publish_appliance(const char *cmd_str)
+static char s_appliance_payload[APPLIANCE_JSON_MAX];
+
+esp_err_t app_mqtt_publish_appliance_json(const char *device, const char *state)
 {
-    return publish_to(CONFIG_KAVACH_MQTT_TOPIC_APPLIANCES, cmd_str);
+    if (!device || !state) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    int n = snprintf(s_appliance_payload, sizeof(s_appliance_payload),
+                     "{\"device\":\"%s\",\"state\":\"%s\"}", device, state);
+    if (n < 0 || (size_t)n >= sizeof(s_appliance_payload)) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    return publish_to(CONFIG_KAVACH_MQTT_TOPIC_APPLIANCES, s_appliance_payload);
 }
 
 esp_err_t app_mqtt_publish_sensor(float temp_c, float humidity_pct)

@@ -8,7 +8,7 @@ file(GLOB_RECURSE ALL_SRCS
 
 # Exclude RainMaker and unused UI/app
 list(FILTER ALL_SRCS EXCLUDE REGEX ".*/rmaker/.*")
-list(FILTER ALL_SRCS EXCLUDE REGEX ".*/(app_led|app_fan|app_switch|app_sntp|app_wifi|file_manager)\\.c$")
+list(FILTER ALL_SRCS EXCLUDE REGEX ".*/(app_led|app_fan|app_switch|app_wifi|file_manager)\\.c$")
 list(FILTER ALL_SRCS EXCLUDE REGEX ".*/(ui_main|ui_about_us|ui_boot_animate|ui_device_ctrl|ui_factory_mode|ui_hint|ui_mute|ui_net_config|ui_player|ui_sensor_monitor|ui_sr)\\.c$")
 list(FILTER ALL_SRCS EXCLUDE REGEX ".*/gui/image/.*")
 # Only font_en_24 for minimal UI

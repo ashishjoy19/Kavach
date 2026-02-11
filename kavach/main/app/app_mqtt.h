@@ -17,8 +17,8 @@ esp_err_t app_mqtt_start(void);
 /** Publish help-related command (I need help, Send alert, Call family, Help). */
 esp_err_t app_mqtt_publish_help(const char *cmd_str);
 
-/** Publish appliance command (light on/off, play, pause, etc.). */
-esp_err_t app_mqtt_publish_appliance(const char *cmd_str);
+/** Publish appliance command as JSON to fabacademy/kavach/appliances: {"device":"light1","state":"ON"}. */
+esp_err_t app_mqtt_publish_appliance_json(const char *device, const char *state);
 
 /** Publish temperature and humidity (e.g. to fabacademy/kavach/sensor). Payload "temp=25.3,hum=60". */
 esp_err_t app_mqtt_publish_sensor(float temp_c, float humidity_pct);

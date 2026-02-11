@@ -74,8 +74,11 @@ static const sr_cmd_t g_default_cmd_info[] = {
     // English
     {SR_CMD_LIGHT_ON, SR_LANG_EN, 0, "Turn On the Light", "TkN nN jc LiT", {NULL}},
     {SR_CMD_LIGHT_ON, SR_LANG_EN, 0, "Switch On the Light", "SWgp nN jc LiT", {NULL}},
+    {SR_CMD_LIGHT_ON, SR_LANG_EN, 0, "Light on", "LiT nN", {NULL}},
+    {SR_CMD_LIGHT_ON, SR_LANG_EN, 0, "Light", "LiT", {NULL}},
     {SR_CMD_LIGHT_OFF, SR_LANG_EN, 0, "Switch Off the Light", "SWgp eF jc LiT", {NULL}},
     {SR_CMD_LIGHT_OFF, SR_LANG_EN, 0, "Turn Off the Light", "TkN eF jc LiT", {NULL}},
+    {SR_CMD_LIGHT_OFF, SR_LANG_EN, 0, "Light off", "LiT eF", {NULL}},
     {SR_CMD_SET_RED, SR_LANG_EN, 0, "Turn Red", "TkN RfD", {NULL}},
     {SR_CMD_SET_GREEN, SR_LANG_EN, 0, "Turn Green", "TkN GRmN", {NULL}},
     {SR_CMD_SET_BLUE, SR_LANG_EN, 0, "Turn Blue", "TkN BLo", {NULL}},
@@ -87,6 +90,13 @@ static const sr_cmd_t g_default_cmd_info[] = {
 
     {SR_CMD_AC_ON, SR_LANG_EN, 0, "Turn on the Air", "TkN nN jc fR", {NULL}},
     {SR_CMD_AC_OFF, SR_LANG_EN, 0, "Turn off the Air", "TkN eF jc fR", {NULL}},
+    {SR_CMD_AC_ON, SR_LANG_EN, 0, "AC on", "AC nN", {NULL}},
+    {SR_CMD_AC_OFF, SR_LANG_EN, 0, "AC off", "AC eF", {NULL}},
+    {SR_CMD_AC_ON, SR_LANG_EN, 0, "AC", "AC", {NULL}},
+
+    {SR_CMD_FAN_ON, SR_LANG_EN, 0, "Fan on", "fAN nN", {NULL}},
+    {SR_CMD_FAN_OFF, SR_LANG_EN, 0, "Fan off", "fAN eF", {NULL}},
+    {SR_CMD_FAN_ON, SR_LANG_EN, 0, "Fan", "fAN", {NULL}},
 
     /* Kavach: help, alert, call (English) */
     {SR_CMD_HELP_ALERT, SR_LANG_EN, 0, "I need help", "aI nEd hfLp", {NULL}},
@@ -95,6 +105,7 @@ static const sr_cmd_t g_default_cmd_info[] = {
     {SR_CMD_CALL_FAMILY, SR_LANG_EN, 0, "Call family", "KeL fAMlE", {NULL}},
     {SR_CMD_CALL_FAMILY, SR_LANG_EN, 0, "Call my son", "KeL maI sUN", {NULL}},
     {SR_CMD_CALL_FAMILY, SR_LANG_EN, 0, "Call home", "KeL hOm", {NULL}},
+    {SR_CMD_CALL_FAMILY, SR_LANG_EN, 0, "Call", "KeL", {NULL}},
     {SR_CMD_HELP, SR_LANG_EN, 0, "Help", "hfLp", {NULL}},
     {SR_CMD_HELP, SR_LANG_EN, 0, "What can you do", "WcT kAN yU dU", {NULL}},
 
@@ -114,6 +125,9 @@ static const sr_cmd_t g_default_cmd_info[] = {
 
     {SR_CMD_AC_ON, SR_LANG_CN, 0, "打开空调", "da kai kong tiao", {NULL}},
     {SR_CMD_AC_OFF, SR_LANG_CN, 0, "关闭空调", "guan bi kong tiao", {NULL}},
+    {SR_CMD_FAN_ON, SR_LANG_CN, 0, "打开风扇", "da kai feng shan", {NULL}},
+    {SR_CMD_FAN_OFF, SR_LANG_CN, 0, "关闭风扇", "guan bi feng shan", {NULL}},
+    {SR_CMD_FAN_ON, SR_LANG_CN, 0, "风扇", "feng shan", {NULL}},
 
     /* Kavach: help, alert, call (Chinese) */
     {SR_CMD_HELP_ALERT, SR_LANG_CN, 0, "我需要帮助", "wo xu yao bang zhu", {NULL}},

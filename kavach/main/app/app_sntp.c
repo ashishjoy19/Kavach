@@ -2,6 +2,16 @@
  * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ *
+ * How the device gets time:
+ * 1. main.c calls app_sntp_init() only after WiFi is connected.
+ * 2. app_sntp_init() sets TZ (timezone) from CONFIG_KAVACH_TIMEZONE, then
+ *    if system time is unset (e.g. 1970), calls obtain_time().
+ * 3. obtain_time() starts the SNTP client (NTP servers: pool.ntp.org, etc.),
+ *    waits up to ~20 s for the first sync, then returns.
+ * 4. When NTP responds, time_sync_notification_cb() runs and settimeofday()
+ *    updates the system clock. The UI clock uses time()/localtime_r(), so
+ *    it shows local time once sync and timezone are correct.
  */
 #include <string.h>
 #include <time.h>
@@ -52,8 +62,8 @@ void app_sntp_init(void)
     struct tm timeinfo;
     time(&now);
     localtime_r(&now, &timeinfo);
-    // Set timezone to China Standard Time
-    setenv("TZ", "CST-8", 1);
+    /* Set timezone from menuconfig (Kavach Configuration → Timezone) */
+    setenv("TZ", CONFIG_KAVACH_TIMEZONE, 1);
     tzset();
     // Is time set? If not, tm_year will be (1970 - 1900).
     if (timeinfo.tm_year < (2016 - 1900)) {
