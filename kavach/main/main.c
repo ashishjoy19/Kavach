@@ -1,5 +1,6 @@
 /*
  * Kavach: voice recognition + MQTT. Publishes voice commands to broker, subscribes for appliance control.
+ * Home button: sends emergency message (same as voice "Send alert").
  */
 #include <stdio.h>
 #include "esp_log.h"
@@ -17,6 +18,19 @@
 #include "bsp/esp-bsp.h"
 
 static const char *TAG = "main";
+
+#if !CONFIG_BSP_BOARD_ESP32_S3_BOX_Lite
+static void home_btn_emergency_cb(void *arg, void *user_data)
+{
+    (void)arg;
+    (void)user_data;
+    ESP_LOGI(TAG, "Home button: sending emergency");
+    kavach_ui_set_status("Alert sent");
+    kavach_ui_set_light(KAVACH_LIGHT_ALERT);
+    kavach_ui_trigger_alert_flash();
+    app_mqtt_publish_help("Emergency - home button");
+}
+#endif
 
 void app_main(void)
 {
@@ -58,6 +72,13 @@ void app_main(void)
     kavach_ui_start();
     vTaskDelay(pdMS_TO_TICKS(500));
     bsp_display_backlight_on();
+
+#if !CONFIG_BSP_BOARD_ESP32_S3_BOX_Lite
+    esp_err_t ret = bsp_btn_register_callback(BSP_BUTTON_MAIN, BUTTON_PRESS_UP, home_btn_emergency_cb, NULL);
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "Home button: press to send emergency");
+    }
+#endif
 
     vTaskDelay(pdMS_TO_TICKS(1000));
     ESP_LOGI(TAG, "Speech recognition start");

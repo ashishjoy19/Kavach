@@ -1,6 +1,6 @@
 /*
- * Kavach minimal UI: one screen with title, status text, temp/humidity, and on-screen light.
- * No buttons, no menu. Signals: wake word, command recognised, alert sent.
+ * Kavach UI: desktop clock when idle (big time + temp/hum); voice mode when wake word
+ * detected (time moves to top-right, status and indicator center).
  */
 #include <stdio.h>
 #include <sys/time.h>
@@ -9,7 +9,10 @@
 #include "esp_log.h"
 #include "bsp_board.h"
 
+LV_FONT_DECLARE(font_en_12);
 LV_FONT_DECLARE(font_en_24);
+LV_FONT_DECLARE(font_en_64);
+LV_FONT_DECLARE(font_en_bold_36);
 
 static const char *TAG = "ui_kavach";
 
@@ -19,79 +22,215 @@ static lv_obj_t *g_title_label = NULL;
 static lv_obj_t *g_temp_label = NULL;
 static lv_obj_t *g_hum_label = NULL;
 static lv_obj_t *g_time_label = NULL;
+static lv_obj_t *g_time_panel = NULL;
+static lv_obj_t *g_temp_card = NULL;
+static lv_obj_t *g_hum_card = NULL;
 static lv_timer_t *g_temp_hum_timer = NULL;
 static lv_timer_t *g_clock_timer = NULL;
+static lv_timer_t *g_flash_poll_timer = NULL;
+static bool g_voice_mode = false;
+static volatile bool g_trigger_alert_flash = false;
 
 static void temp_hum_timer_cb(lv_timer_t *timer);
 static void clock_timer_cb(lv_timer_t *timer);
+static void apply_clock_mode(void);
+static void apply_voice_mode(void);
+static void alert_flash_restore_cb(lv_timer_t *timer);
+static void alert_flash_poll_cb(lv_timer_t *timer);
+
+#define COLOR_BG       0xECEFF1u
+#define COLOR_ALERT_FLASH 0xC62828u  /* red */
+#define COLOR_CARD     0xFFFFFFu
+#define COLOR_TEXT     0x1565C0u
+#define COLOR_TEXT_DIM 0x455A64u
+#define COLOR_CLOCK    0x0D47A1u
 
 static const uint32_t light_colors[KAVACH_LIGHT_MAX] = {
-    [KAVACH_LIGHT_IDLE]       = 0x404040,  /* grey */
-    [KAVACH_LIGHT_LISTENING]  = 0x00C853,  /* green */
-    [KAVACH_LIGHT_COMMAND_OK] = 0x2196F3,  /* blue */
-    [KAVACH_LIGHT_ALERT]      = 0xF44336,  /* red */
+    [KAVACH_LIGHT_IDLE]       = 0x78909C,
+    [KAVACH_LIGHT_LISTENING]  = 0x2E7D32,
+    [KAVACH_LIGHT_COMMAND_OK] = 0x1565C0,
+    [KAVACH_LIGHT_ALERT]      = 0xC62828,
 };
+
+void kavach_ui_set_voice_mode(bool voice_mode)
+{
+    if (g_voice_mode == voice_mode) {
+        return;
+    }
+    g_voice_mode = voice_mode;
+    if (voice_mode) {
+        apply_voice_mode();
+    } else {
+        apply_clock_mode();
+    }
+}
+
+static void apply_clock_mode(void)
+{
+    /* Desktop clock: big time center, temp/hum below */
+    if (g_time_panel) {
+        lv_obj_set_size(g_time_panel, 260, 110);
+        lv_obj_align(g_time_panel, LV_ALIGN_CENTER, 0, -30);
+    }
+    if (g_time_label) {
+        lv_obj_set_style_text_font(g_time_label, &font_en_64, LV_PART_MAIN);
+        lv_obj_center(g_time_label);
+    }
+    if (g_status_label) {
+        lv_obj_add_flag(g_status_label, LV_OBJ_FLAG_HIDDEN);
+    }
+    if (g_light_indicator) {
+        lv_obj_add_flag(g_light_indicator, LV_OBJ_FLAG_HIDDEN);
+    }
+    if (g_title_label) {
+        lv_obj_clear_flag(g_title_label, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_style_text_font(g_title_label, &font_en_24, LV_PART_MAIN);
+        lv_obj_align(g_title_label, LV_ALIGN_TOP_LEFT, 12, 10);
+    }
+    if (g_temp_card) {
+        lv_obj_clear_flag(g_temp_card, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_align(g_temp_card, LV_ALIGN_CENTER, -75, 72);
+    }
+    if (g_hum_card) {
+        lv_obj_clear_flag(g_hum_card, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_align(g_hum_card, LV_ALIGN_CENTER, 75, 72);
+    }
+}
+
+static void apply_voice_mode(void)
+{
+    /* Voice mode: time top-right small, status and indicator center */
+    if (g_time_panel) {
+        lv_obj_set_size(g_time_panel, 100, 44);
+        lv_obj_align(g_time_panel, LV_ALIGN_TOP_RIGHT, -12, 10);
+    }
+    if (g_time_label) {
+        lv_obj_set_style_text_font(g_time_label, &font_en_24, LV_PART_MAIN);
+        lv_obj_center(g_time_label);
+    }
+    if (g_status_label) {
+        lv_obj_clear_flag(g_status_label, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_align(g_status_label, LV_ALIGN_CENTER, 0, -28);
+    }
+    if (g_light_indicator) {
+        lv_obj_clear_flag(g_light_indicator, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_align(g_light_indicator, LV_ALIGN_CENTER, 0, 28);
+    }
+    if (g_title_label) {
+        lv_obj_clear_flag(g_title_label, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_style_text_font(g_title_label, &font_en_bold_36, LV_PART_MAIN);
+        lv_obj_align(g_title_label, LV_ALIGN_TOP_LEFT, 12, 10);
+    }
+    if (g_temp_card) {
+        lv_obj_clear_flag(g_temp_card, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_align(g_temp_card, LV_ALIGN_BOTTOM_LEFT, 12, -12);
+    }
+    if (g_hum_card) {
+        lv_obj_clear_flag(g_hum_card, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_align(g_hum_card, LV_ALIGN_BOTTOM_RIGHT, -12, -12);
+    }
+}
 
 void kavach_ui_start(void)
 {
     lv_obj_t *scr = lv_scr_act();
-    lv_obj_set_style_bg_color(scr, lv_color_hex(0x1a1a2e), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(scr, lv_color_hex(COLOR_BG), LV_PART_MAIN);
+    lv_obj_set_scrollbar_mode(scr, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_set_scroll_dir(scr, LV_DIR_NONE);
 
-    /* Title (top left area) */
+    /* Title */
     g_title_label = lv_label_create(scr);
     lv_label_set_text_static(g_title_label, "Kavach");
-    lv_obj_set_style_text_font(g_title_label, &font_en_24, LV_PART_MAIN);
-    lv_obj_set_style_text_color(g_title_label, lv_color_white(), LV_PART_MAIN);
-    lv_obj_align(g_title_label, LV_ALIGN_TOP_LEFT, 16, 24);
+    lv_obj_set_style_text_color(g_title_label, lv_color_hex(COLOR_TEXT), LV_PART_MAIN);
 
-    /* Current time (top right) */
-    g_time_label = lv_label_create(scr);
+    /* Time panel – size/position set by mode */
+    g_time_panel = lv_obj_create(scr);
+    lv_obj_set_scrollbar_mode(g_time_panel, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_set_style_bg_color(g_time_panel, lv_color_hex(COLOR_CARD), LV_PART_MAIN);
+    lv_obj_set_style_radius(g_time_panel, 16, LV_PART_MAIN);
+    lv_obj_set_style_shadow_width(g_time_panel, 12, LV_PART_MAIN);
+    lv_obj_set_style_shadow_color(g_time_panel, lv_color_hex(0x000000), LV_PART_MAIN);
+    lv_obj_set_style_shadow_opa(g_time_panel, LV_OPA_10, LV_PART_MAIN);
+    lv_obj_set_style_border_width(g_time_panel, 0, LV_PART_MAIN);
+
+    g_time_label = lv_label_create(g_time_panel);
     lv_label_set_text_static(g_time_label, "--:--");
-    lv_obj_set_style_text_font(g_time_label, &font_en_24, LV_PART_MAIN);
-    lv_obj_set_style_text_color(g_time_label, lv_color_white(), LV_PART_MAIN);
-    lv_obj_align(g_time_label, LV_ALIGN_TOP_RIGHT, -16, 24);
+    lv_obj_set_style_text_color(g_time_label, lv_color_hex(COLOR_CLOCK), LV_PART_MAIN);
     g_clock_timer = lv_timer_create(clock_timer_cb, 1000, (void *)g_time_label);
     lv_timer_set_repeat_count(g_clock_timer, -1);
     clock_timer_cb(g_clock_timer);
 
-    /* Temperature (bottom left) and humidity (bottom right) */
-    g_temp_label = lv_label_create(scr);
-    lv_label_set_text_static(g_temp_label, "-- °C");
-    lv_obj_set_style_text_font(g_temp_label, &font_en_24, LV_PART_MAIN);
-    lv_obj_set_style_text_color(g_temp_label, lv_color_white(), LV_PART_MAIN);
-    lv_obj_align(g_temp_label, LV_ALIGN_BOTTOM_LEFT, 16, -24);
-
-    g_hum_label = lv_label_create(scr);
-    lv_label_set_text_static(g_hum_label, "--%");
-    lv_obj_set_style_text_font(g_hum_label, &font_en_24, LV_PART_MAIN);
-    lv_obj_set_style_text_color(g_hum_label, lv_color_white(), LV_PART_MAIN);
-    lv_obj_align(g_hum_label, LV_ALIGN_BOTTOM_RIGHT, -16, -24);
-
-    /* Status text */
+    /* Status and light – shown only in voice mode */
     g_status_label = lv_label_create(scr);
     lv_label_set_text_static(g_status_label, "Ready");
-    lv_obj_set_style_text_font(g_status_label, &font_en_24, LV_PART_MAIN);
-    lv_obj_set_style_text_color(g_status_label, lv_color_white(), LV_PART_MAIN);
-    lv_obj_align(g_status_label, LV_ALIGN_CENTER, 0, -20);
+    lv_obj_set_style_text_font(g_status_label, &font_en_bold_36, LV_PART_MAIN);
+    lv_obj_set_style_text_color(g_status_label, lv_color_hex(COLOR_TEXT), LV_PART_MAIN);
 
-    /* On-screen "light" indicator (circle) */
     g_light_indicator = lv_obj_create(scr);
-    lv_obj_set_size(g_light_indicator, 48, 48);
+    lv_obj_set_size(g_light_indicator, 52, 52);
     lv_obj_set_style_radius(g_light_indicator, LV_RADIUS_CIRCLE, LV_PART_MAIN);
     lv_obj_set_style_bg_color(g_light_indicator, lv_color_hex(light_colors[KAVACH_LIGHT_IDLE]), LV_PART_MAIN);
     lv_obj_set_style_border_width(g_light_indicator, 0, LV_PART_MAIN);
-    lv_obj_set_style_shadow_width(g_light_indicator, 15, LV_PART_MAIN);
+    lv_obj_set_style_shadow_width(g_light_indicator, 14, LV_PART_MAIN);
     lv_obj_set_style_shadow_color(g_light_indicator, lv_color_hex(light_colors[KAVACH_LIGHT_IDLE]), LV_PART_MAIN);
-    lv_obj_align(g_light_indicator, LV_ALIGN_CENTER, 0, 48);
 
-    kavach_ui_set_light(KAVACH_LIGHT_IDLE);
+    /* Temp card: numbers on top, small label directly under */
+    g_temp_card = lv_obj_create(scr);
+    lv_obj_set_size(g_temp_card, 110, 64);
+    lv_obj_set_style_bg_color(g_temp_card, lv_color_hex(COLOR_CARD), LV_PART_MAIN);
+    lv_obj_set_style_radius(g_temp_card, 12, LV_PART_MAIN);
+    lv_obj_set_style_shadow_width(g_temp_card, 6, LV_PART_MAIN);
+    lv_obj_set_style_shadow_color(g_temp_card, lv_color_hex(0x000000), LV_PART_MAIN);
+    lv_obj_set_style_shadow_opa(g_temp_card, LV_OPA_10, LV_PART_MAIN);
+    lv_obj_set_style_border_width(g_temp_card, 0, LV_PART_MAIN);
+    lv_obj_set_scrollbar_mode(g_temp_card, LV_SCROLLBAR_MODE_OFF);
 
-    /* Timer to refresh temperature and humidity every 3 s */
+    g_temp_label = lv_label_create(g_temp_card);
+    lv_label_set_text_static(g_temp_label, "-- °C");
+    lv_obj_set_style_text_font(g_temp_label, &font_en_24, LV_PART_MAIN);
+    lv_obj_set_style_text_color(g_temp_label, lv_color_hex(COLOR_TEXT), LV_PART_MAIN);
+    lv_obj_align(g_temp_label, LV_ALIGN_TOP_MID, 0, 4);
+
+    lv_obj_t *temp_lab = lv_label_create(g_temp_card);
+    lv_label_set_text_static(temp_lab, "Temp");
+    lv_obj_set_style_text_font(temp_lab, &font_en_12, LV_PART_MAIN);
+    lv_obj_set_style_text_color(temp_lab, lv_color_hex(COLOR_TEXT_DIM), LV_PART_MAIN);
+    lv_obj_align(temp_lab, LV_ALIGN_TOP_MID, 0, 34);
+
+    /* Hum card: numbers on top, small label directly under */
+    g_hum_card = lv_obj_create(scr);
+    lv_obj_set_size(g_hum_card, 110, 64);
+    lv_obj_set_style_bg_color(g_hum_card, lv_color_hex(COLOR_CARD), LV_PART_MAIN);
+    lv_obj_set_style_radius(g_hum_card, 12, LV_PART_MAIN);
+    lv_obj_set_style_shadow_width(g_hum_card, 6, LV_PART_MAIN);
+    lv_obj_set_style_shadow_color(g_hum_card, lv_color_hex(0x000000), LV_PART_MAIN);
+    lv_obj_set_style_shadow_opa(g_hum_card, LV_OPA_10, LV_PART_MAIN);
+    lv_obj_set_style_border_width(g_hum_card, 0, LV_PART_MAIN);
+    lv_obj_set_scrollbar_mode(g_hum_card, LV_SCROLLBAR_MODE_OFF);
+
+    g_hum_label = lv_label_create(g_hum_card);
+    lv_label_set_text_static(g_hum_label, "--%");
+    lv_obj_set_style_text_font(g_hum_label, &font_en_24, LV_PART_MAIN);
+    lv_obj_set_style_text_color(g_hum_label, lv_color_hex(COLOR_TEXT), LV_PART_MAIN);
+    lv_obj_align(g_hum_label, LV_ALIGN_TOP_MID, 0, 4);
+
+    lv_obj_t *hum_lab = lv_label_create(g_hum_card);
+    lv_label_set_text_static(hum_lab, "Humidity");
+    lv_obj_set_style_text_font(hum_lab, &font_en_12, LV_PART_MAIN);
+    lv_obj_set_style_text_color(hum_lab, lv_color_hex(COLOR_TEXT_DIM), LV_PART_MAIN);
+    lv_obj_align(hum_lab, LV_ALIGN_TOP_MID, 0, 34);
+
     g_temp_hum_timer = lv_timer_create(temp_hum_timer_cb, 3000, NULL);
     lv_timer_set_repeat_count(g_temp_hum_timer, -1);
-    temp_hum_timer_cb(g_temp_hum_timer);  /* first update */
+    temp_hum_timer_cb(g_temp_hum_timer);
 
-    ESP_LOGI(TAG, "Kavach minimal UI started");
+    g_voice_mode = false;
+    apply_clock_mode();
+
+    g_flash_poll_timer = lv_timer_create(alert_flash_poll_cb, 150, NULL);
+    lv_timer_set_repeat_count(g_flash_poll_timer, -1);
+
+    ESP_LOGI(TAG, "Kavach UI started (clock + voice modes)");
 }
 
 static void clock_timer_cb(lv_timer_t *timer)
@@ -105,6 +244,65 @@ static void clock_timer_cb(lv_timer_t *timer)
     time(&now);
     localtime_r(&now, &timeinfo);
     lv_label_set_text_fmt(lab_time, "%02u:%02u", (unsigned)timeinfo.tm_hour, (unsigned)timeinfo.tm_min);
+}
+
+static void alert_flash_restore_cb(lv_timer_t *timer)
+{
+    lv_obj_t *overlay = (lv_obj_t *)timer->user_data;
+    if (overlay) {
+        lv_obj_del(overlay);
+    }
+    lv_timer_del(timer);
+}
+
+static void alert_flash_poll_cb(lv_timer_t *timer)
+{
+    (void)timer;
+    if (!g_trigger_alert_flash) {
+        return;
+    }
+    g_trigger_alert_flash = false;
+
+    lv_obj_t *scr = lv_scr_act();
+    lv_obj_t *overlay = lv_obj_create(scr);
+    lv_obj_set_size(overlay, LV_PCT(100), LV_PCT(100));
+    lv_obj_set_pos(overlay, 0, 0);
+    lv_obj_set_style_bg_color(overlay, lv_color_hex(COLOR_ALERT_FLASH), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(overlay, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_border_width(overlay, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(overlay, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(overlay, 0, LV_PART_MAIN);
+    lv_obj_clear_flag(overlay, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_move_foreground(overlay);
+
+    /* Title: "Emergency" */
+    lv_obj_t *title = lv_label_create(overlay);
+    lv_label_set_text_static(title, "Emergency");
+    lv_obj_set_style_text_font(title, &font_en_bold_36, LV_PART_MAIN);
+    lv_obj_set_style_text_color(title, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 50);
+
+    /* Confirmation: "Message sent" */
+    lv_obj_t *msg = lv_label_create(overlay);
+    lv_label_set_text_static(msg, "Message sent");
+    lv_obj_set_style_text_font(msg, &font_en_bold_36, LV_PART_MAIN);
+    lv_obj_set_style_text_color(msg, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+    lv_obj_align(msg, LV_ALIGN_CENTER, 0, -10);
+
+    /* Subtext: "Help has been notified" */
+    lv_obj_t *sub = lv_label_create(overlay);
+    lv_label_set_text_static(sub, "Help has been notified");
+    lv_obj_set_style_text_font(sub, &font_en_24, LV_PART_MAIN);
+    lv_obj_set_style_text_color(sub, lv_color_hex(0xFFCDD2), LV_PART_MAIN);
+    lv_obj_align(sub, LV_ALIGN_CENTER, 0, 32);
+
+    lv_timer_t *restore = lv_timer_create(alert_flash_restore_cb, 1200, overlay);
+    lv_timer_set_repeat_count(restore, 1);
+}
+
+void kavach_ui_trigger_alert_flash(void)
+{
+    g_trigger_alert_flash = true;
 }
 
 #define TEMP_HUM_BUF_SIZE 16

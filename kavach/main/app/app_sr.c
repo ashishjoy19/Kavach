@@ -18,6 +18,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "app_sr.h"
+#include "sdkconfig.h"
 
 #include "esp_mn_speech_commands.h"
 #include "esp_process_sdkconfig.h"
@@ -323,7 +324,37 @@ esp_err_t app_sr_set_language(sr_language_t new_lang)
 
     g_sr_data->cmd_num = 0;
 
-    char *wn_name = esp_srmodel_filter(models, ESP_WN_PREFIX, (SR_LANG_EN == g_sr_data->lang ? "hiesp" : "hilexin"));
+    /* Select wakenet model from Kconfig (Hi ESP / Alexa / Both) */
+    const char *wn_filter = "hilexin";
+    if (SR_LANG_EN == g_sr_data->lang) {
+#if defined(CONFIG_KAVACH_WAKE_WORD_ALEXA)
+        wn_filter = "alexa";
+#elif defined(CONFIG_KAVACH_WAKE_WORD_BOTH)
+        wn_filter = NULL; /* try multiple below */
+#else
+        wn_filter = "hiesp";
+#endif
+    }
+    char *wn_name = NULL;
+    if (wn_filter) {
+        wn_name = esp_srmodel_filter(models, ESP_WN_PREFIX, wn_filter);
+    }
+#if defined(CONFIG_KAVACH_WAKE_WORD_BOTH)
+    if (!wn_name && SR_LANG_EN == g_sr_data->lang) {
+        const char *try_order[] = { "hiesp_alexa", "alexa_hiesp", "hiesp", NULL };
+        for (int i = 0; try_order[i] != NULL && !wn_name; i++) {
+            wn_name = esp_srmodel_filter(models, ESP_WN_PREFIX, (char *)try_order[i]);
+        }
+    }
+#endif
+#if defined(CONFIG_KAVACH_WAKE_WORD_ALEXA)
+    if (!wn_name && SR_LANG_EN == g_sr_data->lang) {
+        wn_name = esp_srmodel_filter(models, ESP_WN_PREFIX, "hiesp");
+        if (wn_name) {
+            ESP_LOGW(TAG, "Alexa wakenet not in partition, using Hi ESP");
+        }
+    }
+#endif
     ESP_RETURN_ON_FALSE(NULL != wn_name, ESP_ERR_INVALID_ARG, TAG, "Modifications to the code are required to support the relevant configuration");
     g_sr_data->afe_handle->set_wakenet(g_sr_data->afe_data, wn_name);
     ESP_LOGI(TAG, "load wakenet:%s", wn_name);
@@ -339,7 +370,7 @@ esp_err_t app_sr_set_language(sr_language_t new_lang)
 
     // remove all command
     app_sr_remove_all_cmd();
-    if (strstr(g_sr_data->mn_name, "mn6")) {
+    if (strstr(g_sr_data->mn_name, "mn6") || strstr(g_sr_data->mn_name, "mn7")) {
         esp_mn_commands_clear();
     }
 
@@ -354,6 +385,17 @@ esp_err_t app_sr_set_language(sr_language_t new_lang)
     ESP_LOGI(TAG, "cmd_number=%d", cmd_number);
 
     return app_sr_update_cmds();/* Reset command list */
+}
+
+const char *app_sr_get_wake_prompt(void)
+{
+#if defined(CONFIG_KAVACH_WAKE_WORD_ALEXA)
+    return "Say Alexa";
+#elif defined(CONFIG_KAVACH_WAKE_WORD_BOTH)
+    return "Say Hi ESP or Alexa";
+#else
+    return "Say Hi ESP";
+#endif
 }
 
 esp_err_t app_sr_start(bool record_en)
@@ -510,7 +552,7 @@ esp_err_t app_sr_add_cmd(const sr_cmd_t *cmd)
     SLIST_INSERT_HEAD(&g_sr_data->cmd_list, it, next);
 #endif
 
-    if (strstr(g_sr_data->mn_name, "mn6_en")) {
+    if (strstr(g_sr_data->mn_name, "mn6_en") || strstr(g_sr_data->mn_name, "mn7_en")) {
         esp_mn_commands_add(g_sr_data->cmd_num, (char *)cmd->str);
     } else {
         esp_mn_commands_add(g_sr_data->cmd_num, (char *)cmd->phoneme);
@@ -530,7 +572,7 @@ esp_err_t app_sr_modify_cmd(uint32_t id, const sr_cmd_t *cmd)
     SLIST_FOREACH(it, &g_sr_data->cmd_list, next) {
         if (it->id == id) {
             ESP_LOGI(TAG, "modify cmd [%d] from %s to %s", id, it->str, cmd->str);
-            if (strstr(g_sr_data->mn_name, "mn6_en")) {
+            if (strstr(g_sr_data->mn_name, "mn6_en") || strstr(g_sr_data->mn_name, "mn7_en")) {
                 esp_mn_commands_modify(it->str, (char *)cmd->str);
             } else {
                 esp_mn_commands_modify(it->phoneme, (char *)cmd->phoneme);

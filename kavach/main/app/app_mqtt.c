@@ -37,7 +37,9 @@ static void sensor_timer_cb(void *arg);
 
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
-    esp_mqtt_event_handle_t event = (esp_mqtt_event_handle_t)event_data;
+    (void)handler_args;
+    (void)base;
+    (void)event_data;
 
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
@@ -80,7 +82,7 @@ static void sensor_timer_cb(void *arg)
     if (bsp_board_get_sensor_handle()->get_humiture(&temp, &hum) != ESP_OK) {
         return;
     }
-    (void)snprintf(s_sensor_payload, sizeof(s_sensor_payload), "temp=%.1f,hum=%.0f", (double)temp, (double)hum);
+    (void)snprintf(s_sensor_payload, sizeof(s_sensor_payload), "{\"temp\": %.1f, \"hum\": %.0f}", (double)temp, (double)hum);
     publish_to(CONFIG_KAVACH_MQTT_TOPIC_SENSOR, s_sensor_payload);
 }
 
@@ -160,7 +162,7 @@ esp_err_t app_mqtt_publish_appliance_json(const char *device, const char *state)
 
 esp_err_t app_mqtt_publish_sensor(float temp_c, float humidity_pct)
 {
-    (void)snprintf(s_sensor_payload, sizeof(s_sensor_payload), "temp=%.1f,hum=%.0f", (double)temp_c, (double)humidity_pct);
+    (void)snprintf(s_sensor_payload, sizeof(s_sensor_payload), "{\"temp\": %.1f, \"hum\": %.0f}", (double)temp_c, (double)humidity_pct);
     return publish_to(CONFIG_KAVACH_MQTT_TOPIC_SENSOR, s_sensor_payload);
 }
 

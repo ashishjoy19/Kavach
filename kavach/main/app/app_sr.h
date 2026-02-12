@@ -88,6 +88,9 @@ uint8_t app_sr_search_cmd_from_user_cmd(sr_user_cmd_t user_cmd, uint8_t *id_list
 uint8_t app_sr_search_cmd_from_phoneme(const char *phoneme, uint8_t *id_list, uint16_t max_len);
 esp_err_t app_sr_update_cmds(void);
 
+/** Idle prompt shown on UI (e.g. "Say Hi ESP", "Say Alexa"). Depends on Kconfig wake word. */
+const char *app_sr_get_wake_prompt(void);
+
 #ifdef __cplusplus
 }
 #endif

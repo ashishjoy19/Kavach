@@ -65,4 +65,20 @@ menu "Kavach Configuration"
             POSIX TZ string. Examples: IST-5:30 (India), CST-8 (China), EST5EDT (US Eastern),
             JST-9 (Japan), UTC (no offset). Time is synced via NTP; this only affects local display.
 
+    choice
+        prompt "Wake word"
+        default KAVACH_WAKE_WORD_HIESP
+        help
+            Wake word(s) to start voice commands. Ensure the selected model is included in the
+            ESP Speech Recognition model partition (menuconfig -> ESP Speech Recognition -> WakeNet Model).
+        config KAVACH_WAKE_WORD_HIESP
+            bool "Hi ESP"
+        config KAVACH_WAKE_WORD_ALEXA
+            bool "Alexa"
+        config KAVACH_WAKE_WORD_BOTH
+            bool "Hi ESP and Alexa"
+            help
+                Tries a combined multi-wake model first; falls back to Hi ESP if not found.
+    endchoice
+
 endmenu

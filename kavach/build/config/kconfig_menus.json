@@ -6844,6 +6844,46 @@
                 "range": null,
                 "title": "Timezone for display (TZ string)",
                 "type": "string"
+            },
+            {
+                "children": [
+                    {
+                        "children": [],
+                        "depends_on": "<choice>",
+                        "help": null,
+                        "id": "KAVACH_WAKE_WORD_HIESP",
+                        "name": "KAVACH_WAKE_WORD_HIESP",
+                        "range": null,
+                        "title": "Hi ESP",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "<choice>",
+                        "help": null,
+                        "id": "KAVACH_WAKE_WORD_ALEXA",
+                        "name": "KAVACH_WAKE_WORD_ALEXA",
+                        "range": null,
+                        "title": "Alexa",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "<choice>",
+                        "help": "Tries a combined multi-wake model first; falls back to Hi ESP if not found.",
+                        "id": "KAVACH_WAKE_WORD_BOTH",
+                        "name": "KAVACH_WAKE_WORD_BOTH",
+                        "range": null,
+                        "title": "Hi ESP and Alexa",
+                        "type": "bool"
+                    }
+                ],
+                "depends_on": null,
+                "help": "Wake word(s) to start voice commands. Ensure the selected model is included in the\nESP Speech Recognition model partition (menuconfig -> ESP Speech Recognition -> WakeNet Model).",
+                "id": "kavach-configuration-wake-word",
+                "name": null,
+                "title": "Wake word",
+                "type": "choice"
             }
         ],
         "depends_on": null,

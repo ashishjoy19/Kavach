@@ -1,4 +1,5 @@
 string(REGEX MATCH "factory_demo" PROJECT_IS_FACTORY_DEMO "${PROJECT_DIR}")
+string(REGEX MATCH "kavach_demo" PROJECT_IS_KAVACH_DEMO "${PROJECT_DIR}")
 
 if(EXISTS ${PROJECT_DIR}/sdkconfig)
     message(STATUS "use sdkconfig")
@@ -39,7 +40,8 @@ endif()
 set(requires "driver" "fatfs")
 set(priv_requires "esp-box${box_alias}")
 
-if (PROJECT_IS_FACTORY_DEMO AND COMPILER_TARGET_IS_ESP_BOX_3)
+# Enable sensor (AHT20 temp/humidity, radar) for BOX-3 in factory_demo and kavach_demo
+if ((PROJECT_IS_FACTORY_DEMO OR PROJECT_IS_KAVACH_DEMO) AND COMPILER_TARGET_IS_ESP_BOX_3)
     list(APPEND priv_requires "aht20" "at581x")
     list(APPEND bsp_src "src/boards/esp32_bsp_sensor.c")
 else()

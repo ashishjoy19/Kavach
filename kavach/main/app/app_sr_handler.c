@@ -192,12 +192,14 @@ void sr_handler_task(void *pvParam)
         app_sr_get_result(&result, portMAX_DELAY);
 
         if (result.state == ESP_MN_STATE_TIMEOUT) {
-            kavach_ui_set_status("Say Hi ESP");
+            kavach_ui_set_voice_mode(false);
+            kavach_ui_set_status(app_sr_get_wake_prompt());
             kavach_ui_set_light(KAVACH_LIGHT_IDLE);
             continue;
         }
 
         if (result.wakenet_mode == WAKENET_DETECTED) {
+            kavach_ui_set_voice_mode(true);
             kavach_ui_set_status("Say command");
             kavach_ui_set_light(KAVACH_LIGHT_LISTENING);
             continue;
