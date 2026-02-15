@@ -1,8 +1,0 @@
-Command: cmake -G Ninja -DPYTHON_DEPS_CHECKED=1 -DPYTHON=E:\Espressif\python_env\idf5.5_py3.11_env\Scripts\python.exe -DESP_PLATFORM=1 -DCCACHE_ENABLE=1 E:\Kavach_ESP32
-CMake Error at E:/Espressif/frameworks/esp-idf-v5.5/tools/cmake/project.cmake:472 (message):
-  Directory specified in EXTRA_COMPONENT_DIRS doesn't exist: E:/components
-Call Stack (most recent call first):
-  E:/Espressif/frameworks/esp-idf-v5.5/tools/cmake/project.cmake:574 (__project_init)
-  CMakeLists.txt:16 (project)
-
-

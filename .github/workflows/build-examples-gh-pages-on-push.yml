@@ -1,0 +1,194 @@
+# Copyright 2022 Espressif Systems (Shanghai) PTE LTD
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This workflow build examples, store the artifacts and deploy them to github pages.
+# Generates the launchpad configuration file that can be used with the url.
+
+name: "Build examples to github pages"
+
+on:
+    push:
+        branches:
+        - master
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  delete-old-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: List and Delete artifacts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+
+            console.log('Found artifacts:', artifacts.data.artifacts.map(a => a.name));
+
+            for (const artifact of artifacts.data.artifacts) {
+              if (artifact.name.startsWith('build-images-')) {
+                console.log(`Deleting artifact: ${artifact.name}`);
+                try {
+                  await github.rest.actions.deleteArtifact({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    artifact_id: artifact.id,
+                  });
+                  console.log(`Successfully deleted: ${artifact.name}`);
+                } catch (error) {
+                  console.log(`Failed to delete ${artifact.name}:`, error.message);
+                }
+              }
+            }
+
+  job1:
+    needs: [delete-old-artifacts]
+    runs-on: ubuntu-latest
+    container: espressif/idf:release-v5.1
+    strategy:
+      matrix:
+        build-dir: [
+          'chatgpt_demo',
+          'factory_demo',
+          'image_display',
+          'lv_demos',
+          'mp3_demo',
+          'usb_camera_lcd_display',
+          'usb_headset',
+          'watering_demo']
+        boards: ['sdkconfig.ci.box', 'sdkconfig.ci.box-lite', 'sdkconfig.ci.box-3']
+        exclude:
+          - boards: sdkconfig.ci.box-lite
+            build-dir: usb_camera_lcd_display
+          - boards: sdkconfig.ci.box
+            build-dir: usb_camera_lcd_display
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+      - run: mkdir -p images
+      - name: Build examples
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          pip install --upgrade idf-component-manager
+          pip install "idf_build_apps<2.0"
+
+          cd $GITHUB_WORKSPACE/examples/${{matrix.build-dir}}
+          comm -23 <(grep -v '^#' ${{matrix.boards}} | sort) <(grep -v '^#' sdkconfig.defaults | sort) | sed 's/.*/\n&/' >> sdkconfig.defaults
+
+          if [[ ${{matrix.build-dir}} == chatgpt_demo ]]; then
+            cd factory_nvs
+            comm -23 <(grep -v '^#' ${{matrix.boards}} | sort) <(grep -v '^#' sdkconfig.defaults | sort) | sed 's/.*/\n&/' >> sdkconfig.defaults
+            idf.py build
+            cd ../
+          fi
+
+          idf.py build
+          cd build
+          esptool.py --chip esp32s3 merge_bin -o "$GITHUB_WORKSPACE/images/${{matrix.build-dir}}_${{matrix.boards}}.bin" @flash_args
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-images-${{matrix.build-dir}}-${{matrix.boards}}
+          path: images/
+          overwrite: true
+
+  job2:
+    needs: [delete-old-artifacts]
+    runs-on: ubuntu-latest
+    container: espressif/esp-matter:latest_idf_v5.1.1
+    strategy:
+      matrix:
+        build-dir: ['matter_switch']
+        boards: ['sdkconfig.ci.box', 'sdkconfig.ci.box-lite', 'sdkconfig.ci.box-3']
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+      - run: mkdir -p images
+      - name: Build examples
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          . $ESP_MATTER_PATH/export.sh
+          pip install --upgrade "idf-component-manager~=1.2"
+          pip install "idf_build_apps<2.0"
+
+          cd $GITHUB_WORKSPACE/examples/${{matrix.build-dir}}
+          comm -23 <(grep -v '^#' ${{matrix.boards}} | sort) <(grep -v '^#' sdkconfig.defaults | sort) | sed 's/.*/\n&/' >> sdkconfig.defaults
+
+          idf.py set-target esp32s3 build
+          cd build
+          esptool.py --chip esp32s3 merge_bin -o "$GITHUB_WORKSPACE/images/${{matrix.build-dir}}_${{matrix.boards}}.bin" @flash_args
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-images-${{matrix.build-dir}}-${{matrix.boards}}
+          path: images/
+          overwrite: true
+
+  deploy:
+    needs: [job1, job2]
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+
+      - name: Download builds
+        uses: actions/download-artifact@v4
+        with:
+          pattern: build-images-*
+          path: images/
+          merge-multiple: true
+
+      - name: generate launchpad config
+        run: |
+          cd images/
+          mv $GITHUB_WORKSPACE/bin/*.bin ./
+          ls *
+          $GITHUB_WORKSPACE/tools/launchpad/rename.sh $GITHUB_WORKSPACE
+          $GITHUB_WORKSPACE/tools/launchpad/generate_launchpad_config.sh $GITHUB_REPOSITORY
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v2
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: images/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
