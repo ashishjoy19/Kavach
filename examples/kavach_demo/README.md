@@ -51,13 +51,18 @@ Set **Board: ESP32-S3-BOX-3** in `idf.py menuconfig` (BSP) if needed.
 
 ## Project layout
 
-- `main/main.c` – NVS, settings, **WiFi**, **MQTT**, display, SR start (no LED).
-- `main/app/app_wifi_simple.c` – WiFi STA (SSID/password from config).
-- `main/app/app_mqtt.c` – MQTT client: **publish only** to `kavach/help` and `kavach/appliances`.
-- `main/app/app_sr.c`, `app_sr_handler.c` – SR + handler; handler publishes help commands to help topic and all other commands to appliances topic.
-- `main/Kconfig.projbuild` – WiFi SSID/password, MQTT broker URI, and the two topic names.
+Paths below are relative to **`examples/kavach_demo/`**.
+
+- **`main/main.c`** – NVS, settings, WiFi, SNTP, MQTT, display, BSP, UI, IR, speech recognition; home button (short = emergency, long = IR learn).
+- **`main/app/app_wifi_simple.c`**, **`app_wifi_simple.h`** – WiFi STA (SSID/password from config).
+- **`main/app/app_mqtt.c`**, **`app_mqtt.h`** – MQTT client: publish only to `kavach/help` and `kavach/appliances`.
+- **`main/app/app_sr.c`**, **`app_sr_handler.c`** – SR + handler; handler publishes help commands to help topic and all other commands to appliances topic.
+- **`main/app/app_sntp.c`**, **`app_ir.c`** – SNTP (time for UI), IR learning/AC control.
+- **`main/Kconfig.projbuild`** – Kavach Configuration: WiFi SSID/password, MQTT broker URI, topic names, timezone, wake word.
+- **`main/gui/ui_kavach.c`**, **`ui_kavach.h`** – Minimal UI (title, status, on-screen state).
+
+For full repository structure and file navigation, see the **[root README](../../README.md)**.
 
 ## References
 
-- [Factory example](../factory_demo/README.md) – full voice + UI reference.
 - [ESP-SR](https://github.com/espressif/esp-sr) – wake word and speech commands.
